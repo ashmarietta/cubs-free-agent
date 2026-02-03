@@ -1,0 +1,97 @@
+---
+title: "Pitching Analysis"
+format:
+  html:
+    toc: true
+    toc-location: left
+    self-contained: true
+jupyter: python3
+---
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+```{python}
+data = pd.read_excel('2026_cubs_pitching.xlsx', sheet_name='FREE_AGENTS')
+data.head()
+```
+
+```{python}
+# age vs. salary scatter plot
+plt.figure()
+plt.scatter(data["Age"], data["THISYR_SALARY"])
+plt.xlabel("Age")
+plt.ylabel("2026 Salary (Millions USD)")
+plt.title("Age vs. 2026 Salary")
+plt.scatter(
+    data[data["TEAM"] == "Cubs"]["Age"],
+    data[data["TEAM"] == "Cubs"]["THISYR_SALARY"],
+    color="red",
+    label="Cubs"
+)
+
+plt.xlabel("Age")
+plt.ylabel("2026 Salary (Millions USD)")
+plt.title("Age vs. 2026 Salary")
+plt.legend()
+
+# annotate luzardo
+luzardo = data[data["Player"].str.contains("Luzardo", na=False)]
+for _, r in luzardo.iterrows():
+    plt.annotate(
+        r["Player"],
+        (r["Age"], r["THISYR_SALARY"]),
+        xytext=(6, 6),
+        textcoords="offset points"
+    )
+
+plt.show()
+```
+
+```{python}
+# war vs. salary bar chart
+data["EXPECTED_WAR"] = data["THISYR_SALARY"] / 8
+data["GAP"] = data["WAR"] - data["EXPECTED_WAR"]
+
+data = data.sort_values("GAP", ascending=False)
+
+x = np.arange(len(data))
+width = 0.4
+
+fig, ax1 = plt.subplots(figsize=(12, 6))
+
+# salary bars (left axis)
+ax1.bar(
+    x - width/2,
+    data["THISYR_SALARY"],
+    width,
+    color="red",
+    label="Salary (Millions USD)"
+)
+ax1.set_ylabel("2026 Salary (Millions USD)")
+ax1.set_xticks(x)
+ax1.set_xticklabels(data["Player"], rotation=45, ha="right")
+
+# WAR bars — right axis
+ax2 = ax1.twinx()
+ax2.bar(
+    x + width/2,
+    data["WAR"],
+    width,
+    color="blue",
+    label="WAR"
+)
+ax2.set_ylabel("WAR")
+
+# combined legend
+handles1, labels1 = ax1.get_legend_handles_labels()
+handles2, labels2 = ax2.get_legend_handles_labels()
+ax1.legend(handles1 + handles2, labels1 + labels2, loc="upper right")
+
+plt.title("Salary vs. WAR (Sorted by Surplus WAR Value)")
+plt.tight_layout()
+plt.show()
+```
